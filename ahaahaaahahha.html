@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEPARTURE — Sistema de Recrutamento (Case Study)</title>
+<meta name="description" content="Case study: um sistema que organiza recrutamento de ponta a ponta — candidatos, vagas, entrevistas e relatórios — com proposta de arquitetura em microsserviços.">
+<meta property="og:title" content="DEPARTURE — Case study de um sistema de recrutamento">
+<meta property="og:description" content="Como transformei o processo seletivo de uma empresa em um painel único, com IA, compliance e relatórios automáticos.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Ao hospedar esta página, adicione sua própria imagem de preview:
+<meta property="og:image" content="https://seu-dominio.com/preview.png"> -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2310131A'/><text x='50' y='69' font-family='sans-serif' font-size='58' font-weight='700' fill='%23E3A73C' text-anchor='middle'>D</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['"Space Grotesk"', 'sans-serif'],
+          sans: ['Inter', 'sans-serif'],
+          mono: ['"IBM Plex Mono"', 'monospace'],
+        },
+        colors: {
+          dep: {
+            bg: '#10131A',
+            panel: '#181C27',
+            border: '#2B3142',
+            amber: '#E3A73C',
+            teal: '#5FC7B8',
+            coral: '#E8735A',
+            ink: '#F2EFE9',
+            muted: '#8B93A7',
+          }
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid #E3A73C;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .flap-row { animation: rowIn 0.5s ease-out both; }
+  @media (prefers-reduced-motion: reduce) {
+    .flap-row { animation: none; }
+  }
+</style>
+</head>
+<body class="bg-dep-bg text-dep-ink font-sans antialiased selection:bg-dep-amber selection:text-dep-bg">
+
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-dep-amber focus:text-dep-bg focus:px-4 focus:py-2 focus:rounded">Pular para o conteúdo</a>
+
+<!-- NAV -->
+<header class="fixed top-0 inset-x-0 z-40 border-b border-dep-border/60 bg-dep-bg/80 backdrop-blur">
+  <nav class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <span class="font-display font-bold text-lg tracking-tight">DEPARTURE</span>
+    <div class="hidden md:flex items-center gap-8 font-mono text-xs uppercase tracking-widest text-dep-muted">
+      <a href="#como-funciona" class="hover:text-dep-ink transition-colors">Como funciona</a>
+      <a href="#arquitetura" class="hover:text-dep-ink transition-colors">Arquitetura</a>
+      <a href="#stack" class="hover:text-dep-ink transition-colors">Stack</a>
+      <a href="#contato" class="hover:text-dep-ink transition-colors">Contato</a>
+    </div>
+    <a href="#contato" class="font-mono text-xs uppercase tracking-widest border border-dep-amber text-dep-amber px-4 py-2 rounded-full hover:bg-dep-amber hover:text-dep-bg transition-colors">Falar comigo</a>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- HERO -->
+<section class="pt-36 sm:pt-40 pb-20 sm:pb-24 px-6 border-b border-dep-border/60">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 items-center">
+    <div>
+      <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-dep-amber mb-6">
+        <span class="w-1.5 h-1.5 rounded-full bg-dep-amber"></span>
+        Departure · Sistema de recrutamento
+      </span>
+      <h1 class="font-display font-bold text-4xl sm:text-5xl lg:text-6xl leading-[1.08] tracking-tight mb-6">
+        Cada candidato,<br>um voo em andamento.
+      </h1>
+      <p class="text-dep-muted text-lg leading-relaxed mb-8 max-w-md">
+        O DEPARTURE é um sistema que criei pra organizar recrutamento de ponta a ponta: candidatos, vagas, entrevistas e relatórios, tudo com status visível — sem planilha perdida, sem grupo de WhatsApp fazendo o papel de banco de dados.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#como-funciona" class="font-mono text-xs uppercase tracking-widest bg-dep-amber text-dep-bg px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-opacity">Ver como funciona</a>
+        <a href="#arquitetura" class="font-mono text-xs uppercase tracking-widest border border-dep-border px-6 py-3 rounded-full hover:border-dep-muted transition-colors">Ver arquitetura</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="bg-dep-panel border border-dep-border rounded-2xl p-5 sm:p-6 shadow-2xl shadow-black/40">
+        <div class="flex items-center justify-between mb-4 font-mono text-[10px] uppercase tracking-widest text-dep-muted">
+          <span>Painel de candidatos</span>
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-dep-teal"></span>ao vivo</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[460px] font-mono text-xs sm:text-[13px] border-collapse">
+            <thead>
+              <tr class="text-dep-muted uppercase text-[10px] tracking-widest border-b border-dep-border">
+                <th class="text-left font-medium pb-3 pr-2">Código</th>
+                <th class="text-left font-medium pb-3 pr-2">Candidato</th>
+                <th class="text-left font-medium pb-3 pr-2">Vaga</th>
+                <th class="text-left font-medium pb-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="flap-row border-b border-dep-border/60" style="animation-delay:0.05s">
+                <td class="py-3 pr-2 text-dep-muted">DEP-104</td>
+                <td class="py-3 pr-2">M. Silveira</td>
+                <td class="py-3 pr-2 text-dep-muted">Analista de RH</td>
+                <td class="py-3 text-dep-teal font-medium">Entrevista marcada</td>
+              </tr>
+              <tr class="flap-row border-b border-dep-border/60" style="animation-delay:0.15s">
+                <td class="py-3 pr-2 text-dep-muted">DEP-107</td>
+                <td class="py-3 pr-2">J. Almeida</td>
+                <td class="py-3 pr-2 text-dep-muted">Supervisor de Produção</td>
+                <td class="py-3 text-dep-amber font-medium">Aguardando retorno</td>
+              </tr>
+              <tr class="flap-row border-b border-dep-border/60" style="animation-delay:0.25s">
+                <td class="py-3 pr-2 text-dep-muted">DEP-111</td>
+                <td class="py-3 pr-2">C. Rocha</td>
+                <td class="py-3 pr-2 text-dep-muted">Assistente Administrativo</td>
+                <td class="py-3 text-dep-teal font-medium">Aprovado</td>
+              </tr>
+              <tr class="flap-row" style="animation-delay:0.35s">
+                <td class="py-3 pr-2 text-dep-muted">DEP-118</td>
+                <td class="py-3 pr-2">R. Nogueira</td>
+                <td class="py-3 pr-2 text-dep-muted">Operador de Máquinas</td>
+                <td class="py-3 text-dep-coral font-medium">Follow-up atrasado</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-3 text-[10px] text-dep-muted font-mono">* dados ilustrativos</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section id="problema" class="py-20 sm:py-24 px-6 border-b border-dep-border/60">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-12 items-start">
+    <div class="lg:col-span-2">
+      <h2 class="font-display font-bold text-3xl mb-4">Antes do painel, era tudo manual</h2>
+      <p class="text-dep-muted leading-relaxed">
+        Recrutamento sério não roda numa planilha compartilhada com abas demais e numa fila de WhatsApp. É informação que se perde, follow-up que ninguém lembra de fazer, e um relatório semanal que alguém monta no braço, sexta à noite.
+      </p>
+    </div>
+    <div class="lg:col-span-3">
+      <div class="bg-dep-panel/50 border border-dashed border-dep-border rounded-2xl p-6">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-dep-muted mb-4">Como era antes</p>
+        <table class="w-full font-mono text-xs text-dep-muted">
+          <tbody>
+            <tr class="border-b border-dep-border/40">
+              <td class="py-2.5 pr-3 line-through decoration-dep-coral/70 whitespace-nowrap">Planilha_final_v3.xlsx</td>
+              <td class="py-2.5 text-dep-coral">sem registro de quem editou</td>
+            </tr>
+            <tr class="border-b border-dep-border/40">
+              <td class="py-2.5 pr-3 line-through decoration-dep-coral/70 whitespace-nowrap">Grupo "RH - Vagas"</td>
+              <td class="py-2.5 text-dep-coral">follow-up perdido no scroll</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 pr-3 line-through decoration-dep-coral/70 whitespace-nowrap">Slide feito na sexta à noite</td>
+              <td class="py-2.5 text-dep-coral">sem dado nenhum por trás</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section id="como-funciona" class="py-20 sm:py-24 px-6 border-b border-dep-border/60">
+  <div class="max-w-6xl mx-auto">
+    <div class="max-w-xl mb-12 sm:mb-14">
+      <h2 class="font-display font-bold text-3xl mb-4">Um painel, o processo inteiro</h2>
+      <p class="text-dep-muted leading-relaxed">Da primeira triagem ao desligamento, cada etapa fica registrada — e visível pra quem precisa decidir.</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">04A</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Painel geral</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">Vagas abertas, candidatos por etapa e tempo médio de contratação, atualizados em tempo real.</p>
+      </div>
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">04B</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Pipeline de candidatos</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">Histórico completo, do currículo à decisão final, em um só lugar.</p>
+      </div>
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">04C</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Agenda de entrevistas</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">Marcação e lembrete centralizados — sem trocar mensagem pra confirmar horário.</p>
+      </div>
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">04D</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Gestão de vagas</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">Status e responsável por cada vaga aberta, visível pro time todo.</p>
+      </div>
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">05A</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Relatório com IA</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">Resumo e pontos fortes e fracos por candidato, gerado a partir da entrevista.</p>
+      </div>
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">05B</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Desligamentos</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">O processo de saída acompanhado com o mesmo cuidado que o de entrada.</p>
+      </div>
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">05C</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Auditoria e LGPD</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">Todo acesso a dado sensível fica registrado, pronto pra compliance.</p>
+      </div>
+      <div class="bg-dep-panel border border-dep-border rounded-xl p-5 hover:border-dep-amber/60 transition-colors">
+        <span class="font-mono text-[10px] text-dep-muted tracking-widest">05D</span>
+        <h3 class="font-display font-semibold text-base mt-2 mb-2">Exportação 1-clique</h3>
+        <p class="text-dep-muted text-sm leading-relaxed">Relatório semanal em PPTX ou Excel, pronto pra apresentar — sem montar slide.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARQUITETURA -->
+<section id="arquitetura" class="py-20 sm:py-24 px-6 border-b border-dep-border/60">
+  <div class="max-w-6xl mx-auto">
+    <div class="max-w-2xl mb-10">
+      <h2 class="font-display font-bold text-3xl mb-4">Hoje é uma aplicação só. Se precisasse escalar, eu quebraria assim.</h2>
+      <p class="text-dep-muted leading-relaxed">O sistema roda hoje como uma aplicação única — simples de manter e rápida de evoluir sozinho. Com mais recrutadores e mais empresas usando ao mesmo tempo, essa seria minha proposta pra separar em serviços independentes.</p>
+    </div>
+
+    <div class="bg-dep-panel border border-dep-border rounded-2xl p-4 sm:p-8 overflow-x-auto mb-10">
+      <svg viewBox="0 0 1120 560" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[720px]" role="img" aria-label="Diagrama: app web conecta a um API Gateway com autenticação, que distribui para seis serviços (Candidatos, Vagas, Agenda, IA Scoring, Relatórios, Auditoria), todos publicando eventos em um barramento assíncrono que alimenta o banco de dados e o armazenamento de arquivos.">
+        <g stroke="#2B3142" stroke-width="1.5" fill="none">
+          <line x1="560" y1="76" x2="560" y2="110" />
+          <line x1="560" y1="166" x2="100" y2="210" />
+          <line x1="560" y1="166" x2="284" y2="210" />
+          <line x1="560" y1="166" x2="468" y2="210" />
+          <line x1="560" y1="166" x2="652" y2="210" />
+          <line x1="560" y1="166" x2="836" y2="210" />
+          <line x1="560" y1="166" x2="1020" y2="210" />
+          <line x1="100" y1="280" x2="100" y2="340" />
+          <line x1="284" y1="280" x2="284" y2="340" />
+          <line x1="468" y1="280" x2="468" y2="340" />
+          <line x1="652" y1="280" x2="652" y2="340" />
+          <line x1="836" y1="280" x2="836" y2="340" />
+          <line x1="1020" y1="280" x2="1020" y2="340" />
+          <line x1="390" y1="384" x2="390" y2="440" />
+          <line x1="750" y1="384" x2="750" y2="440" />
+        </g>
+
+        <rect x="410" y="20" width="300" height="56" rx="10" fill="#181C27" stroke="#2B3142" stroke-width="1.5"/>
+        <text x="560" y="53" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" font-weight="600" fill="#F2EFE9" letter-spacing="0.5">APP WEB · RECRUTADOR</text>
+
+        <rect x="390" y="110" width="340" height="56" rx="10" fill="#181C27" stroke="#E3A73C" stroke-width="1.5"/>
+        <text x="560" y="143" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" font-weight="600" fill="#E3A73C" letter-spacing="0.5">API GATEWAY + AUTENTICAÇÃO</text>
+
+        <rect x="20" y="210" width="160" height="70" rx="10" fill="#181C27" stroke="#2B3142" stroke-width="1.5"/>
+        <text x="100" y="240" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#F2EFE9">CANDIDATOS</text>
+        <text x="100" y="258" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">pipeline &amp; histórico</text>
+
+        <rect x="204" y="210" width="160" height="70" rx="10" fill="#181C27" stroke="#2B3142" stroke-width="1.5"/>
+        <text x="284" y="240" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#F2EFE9">VAGAS</text>
+        <text x="284" y="258" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">abertura &amp; status</text>
+
+        <rect x="388" y="210" width="160" height="70" rx="10" fill="#181C27" stroke="#2B3142" stroke-width="1.5"/>
+        <text x="468" y="240" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#F2EFE9">AGENDA</text>
+        <text x="468" y="258" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">entrevistas</text>
+
+        <rect x="572" y="210" width="160" height="70" rx="10" fill="#181C27" stroke="#E3A73C" stroke-width="1.5"/>
+        <text x="652" y="240" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#E3A73C">IA SCORING</text>
+        <text x="652" y="258" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">resumo &amp; pontuação</text>
+
+        <rect x="756" y="210" width="160" height="70" rx="10" fill="#181C27" stroke="#E3A73C" stroke-width="1.5"/>
+        <text x="836" y="240" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#E3A73C">RELATÓRIOS</text>
+        <text x="836" y="258" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">export PPTX/XLSX</text>
+
+        <rect x="940" y="210" width="160" height="70" rx="10" fill="#181C27" stroke="#5FC7B8" stroke-width="1.5"/>
+        <text x="1020" y="240" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#5FC7B8">AUDITORIA</text>
+        <text x="1020" y="258" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">trilha LGPD</text>
+
+        <rect x="20" y="340" width="1080" height="44" rx="8" fill="#181C27" stroke="#E8735A" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="560" y="367" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#E8735A" letter-spacing="0.5">BARRAMENTO DE EVENTOS (PUB/SUB)</text>
+
+        <rect x="260" y="440" width="260" height="60" rx="10" fill="#181C27" stroke="#2B3142" stroke-width="1.5"/>
+        <text x="390" y="468" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#F2EFE9">BANCO DE DADOS</text>
+        <text x="390" y="485" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">um por serviço</text>
+
+        <rect x="620" y="440" width="260" height="60" rx="10" fill="#181C27" stroke="#2B3142" stroke-width="1.5"/>
+        <text x="750" y="468" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12.5" font-weight="600" fill="#F2EFE9">ARQUIVOS</text>
+        <text x="750" y="485" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#8B93A7">currículos &amp; relatórios</text>
+      </svg>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 font-mono text-xs text-dep-muted">
+      <p><span class="text-dep-amber">→</span> IA e geração de relatório isoladas: são as tarefas mais pesadas — dá pra escalar ou rodar em fila sem travar o resto.</p>
+      <p><span class="text-dep-teal">→</span> Auditoria em serviço próprio: LGPD pede trilha imutável — melhor manter isolado, com acesso restrito.</p>
+      <p><span class="text-dep-coral">→</span> Barramento no meio: quando um candidato muda de etapa, quem precisa saber escuta o evento — ninguém chama ninguém direto.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STACK -->
+<section id="stack" class="py-16 sm:py-20 px-6 border-b border-dep-border/60">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="font-display font-bold text-2xl mb-8">Por baixo do capô</h2>
+    <div class="flex flex-wrap gap-3 font-mono text-xs uppercase tracking-wider">
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">Firebase · Firestore</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">Firebase Auth</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">Firebase Storage</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">Tailwind CSS</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">Chart.js</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">IA generativa (LLM)</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">pptxgenjs</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">SheetJS</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">DOMPurify</span>
+      <span class="border border-dep-border rounded-full px-4 py-2 text-dep-muted">html2pdf.js</span>
+    </div>
+  </div>
+</section>
+
+<!-- CONTATO -->
+<footer id="contato" class="py-20 sm:py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="max-w-2xl mb-12 sm:mb-14">
+      <h2 class="font-display font-bold text-3xl mb-4">Vamos conversar?</h2>
+      <!-- EDITE AQUI: seu nome, cargo e uma frase sobre você -->
+      <p class="text-dep-muted leading-relaxed">
+        [Seu Nome] — [seu cargo, ex: Desenvolvedor Full-Stack]. Gosto de pegar um problema real de um time e transformar em ferramenta que ele usa todo santo dia. O DEPARTURE é um exemplo disso, do zero ao ar.
+      </p>
+    </div>
+    <!-- EDITE AQUI: seus links reais -->
+    <div class="flex flex-wrap gap-4 mb-16">
+      <a href="mailto:wiltonpedro35@gmail.com" class="font-mono text-xs uppercase tracking-widest bg-dep-amber text-dep-bg px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-opacity">E-mail</a>
+      <a href="https://www.linkedin.com/in/wilton-pedro/" class="font-mono text-xs uppercase tracking-widest border border-dep-border px-6 py-3 rounded-full hover:border-dep-muted transition-colors">LinkedIn</a>
+      <a href="https://github.com/WILTONpedro" class="font-mono text-xs uppercase tracking-widest border border-dep-border px-6 py-3 rounded-full hover:border-dep-muted transition-colors">GitHub</a>
+    </div>
+    <div class="pt-8 border-t border-dep-border/60 flex flex-col sm:flex-row justify-between gap-3 font-mono text-[11px] text-dep-muted">
+      <p>* Nome do produto, marca e dados deste case foram alterados por confidencialidade. Funcionalidades e arquitetura são reais.</p>
+      <p>DEPARTURE — case study, 2026</p>
+    </div>
+  </div>
+</footer>
+
+</main>
+</body>
+</html>
